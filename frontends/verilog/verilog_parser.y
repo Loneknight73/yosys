@@ -149,9 +149,11 @@ struct specify_rise_fall {
 %token TOK_GENERATE TOK_ENDGENERATE TOK_GENVAR TOK_REAL
 %token TOK_SYNOPSYS_FULL_CASE TOK_SYNOPSYS_PARALLEL_CASE
 %token TOK_SUPPLY0 TOK_SUPPLY1 TOK_TO_SIGNED TOK_TO_UNSIGNED
-%token TOK_POS_INDEXED TOK_NEG_INDEXED TOK_PROPERTY TOK_ENUM TOK_TYPEDEF
+%token TOK_POS_INDEXED TOK_NEG_INDEXED TOK_PROPERTY TOK_ENDPROPERTY TOK_ENUM TOK_TYPEDEF
 %token TOK_RAND TOK_CONST TOK_CHECKER TOK_ENDCHECKER TOK_EVENTUALLY
 %token TOK_INCREMENT TOK_DECREMENT TOK_UNIQUE TOK_PRIORITY
+%token TOK_SEQUENCE TOK_ENDSEQUENCE
+%token TOK_CYCLE_DELAY
 
 %type <ast> range range_or_multirange  non_opt_range non_opt_multirange range_or_signed_int
 %type <ast> wire_type expr basic_expr concat_list rvalue lvalue lvalue_concat_list
@@ -592,7 +594,7 @@ module_body:
 
 module_body_stmt:
 	task_func_decl | specify_block |param_decl | localparam_decl | defparam_decl | specparam_declaration | wire_decl | assign_stmt | cell_stmt |
-	always_stmt | TOK_GENERATE module_gen_body TOK_ENDGENERATE | defattr | assert_property | checker_decl | ignored_specify_block;
+	always_stmt | TOK_GENERATE module_gen_body TOK_ENDGENERATE | defattr | assert_property | sequence_decl | checker_decl | ignored_specify_block;
 
 checker_decl:
 	TOK_CHECKER TOK_ID ';' {
@@ -1803,6 +1805,29 @@ assert_property:
 		}
 	};
 
+sequence_decl:
+	TOK_SEQUENCE TOK_ID ';' sequence_expr ';' TOK_ENDSEQUENCE {
+	/* TODO */
+	}
+
+sequence_expr:
+	cycle_delay_range_expr {
+	/* TODO */
+	} |
+	sequence_expr cycle_delay_range_expr {
+
+	} |
+	expr {
+        /* TODO */
+        } ;
+
+cycle_delay_range_expr:
+	cycle_delay_range sequence_expr |
+	cycle_delay_range_expr cycle_delay_range sequence_expr;
+
+cycle_delay_range:
+	TOK_CYCLE_DELAY TOK_CONSTVAL;
+
 simple_behavioral_stmt:
 	lvalue '=' delay expr {
 		AstNode *node = new AstNode(AST_ASSIGN_EQ, $1, $4);
@@ -2149,7 +2174,7 @@ gen_stmt:
 		ast_stack.back()->children.push_back(node);
 		ast_stack.push_back(node);
 	} opt_arg_list ';'{
-		ast_stack.pop_back();		
+		ast_stack.pop_back();
 	};
 
 gen_stmt_block:

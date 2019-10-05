@@ -207,6 +207,9 @@ YOSYS_NAMESPACE_END
 "cover"      { if (formal_mode) return TOK_COVER; SV_KEYWORD(TOK_COVER); }
 "restrict"   { if (formal_mode) return TOK_RESTRICT; SV_KEYWORD(TOK_RESTRICT); }
 "property"   { if (formal_mode) return TOK_PROPERTY; SV_KEYWORD(TOK_PROPERTY); }
+"endproperty"   { if (formal_mode) return TOK_ENDPROPERTY; SV_KEYWORD(TOK_ENDPROPERTY); }
+"sequence"   { if (formal_mode) return TOK_SEQUENCE; SV_KEYWORD(TOK_SEQUENCE); }
+"endsequence"   { if (formal_mode) return TOK_ENDSEQUENCE; SV_KEYWORD(TOK_ENDSEQUENCE); }
 "rand"       { if (formal_mode) return TOK_RAND; SV_KEYWORD(TOK_RAND); }
 "const"      { if (formal_mode) return TOK_CONST; SV_KEYWORD(TOK_CONST); }
 "checker"    { if (formal_mode) return TOK_CHECKER; SV_KEYWORD(TOK_CHECKER); }
@@ -430,6 +433,8 @@ import[ \t\r\n]+\"(DPI|DPI-C)\"[ \t\r\n]+function[ \t\r\n]+ {
 
 "+:" { return TOK_POS_INDEXED; }
 "-:" { return TOK_NEG_INDEXED; }
+
+"##" {return TOK_CYCLE_DELAY; }
 
 [-+]?[=*]> {
 	if (!specify_mode) REJECT;
