@@ -88,6 +88,8 @@ std::string AST::type2str(AstNodeType type)
 	X(AST_LIVE)
 	X(AST_FAIR)
 	X(AST_COVER)
+    X(AST_PROPERTY)
+    X(AST_SEQUENCE)
 	X(AST_FCALL)
 	X(AST_TO_BITS)
 	X(AST_TO_SIGNED)
@@ -164,6 +166,7 @@ std::string AST::type2str(AstNodeType type)
 	X(AST_MODPORT)
 	X(AST_MODPORTMEMBER)
 	X(AST_PACKAGE)
+	X(AST_SVA_SEQ_CONCAT)
 #undef X
 	default:
 		log_abort();

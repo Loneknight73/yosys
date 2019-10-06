@@ -157,6 +157,7 @@ struct specify_rise_fall {
 
 %type <ast> range range_or_multirange  non_opt_range non_opt_multirange range_or_signed_int
 %type <ast> wire_type expr basic_expr concat_list rvalue lvalue lvalue_concat_list
+%type <ast> sequence_expr cycle_delay_range_expr cycle_delay_range
 %type <string> opt_label opt_sva_label tok_prim_wrapper hierarchical_id
 %type <boolean> opt_signed opt_property unique_case_attr
 %type <al> attr case_attr
@@ -1807,7 +1808,9 @@ assert_property:
 
 sequence_decl:
 	TOK_SEQUENCE TOK_ID ';' sequence_expr ';' TOK_ENDSEQUENCE {
-	/* TODO */
+		ast_stack.back()->children.push_back(new AstNode(AST_SEQUENCE, $4));
+		ast_stack.back()->children.back()->str = *$2;
+		delete $2;
 	}
 
 sequence_expr:
@@ -1818,15 +1821,52 @@ sequence_expr:
 
 	} |
 	expr {
-        /* TODO */
+
         } ;
 
 cycle_delay_range_expr:
-	cycle_delay_range sequence_expr |
-	cycle_delay_range_expr cycle_delay_range sequence_expr;
+	cycle_delay_range sequence_expr {
+		AstNode *node = new AstNode(AST_SVA_SEQ_CONCAT, $1, $2);
+       		ast_stack.back()->children.push_back(node);
+	} |
+	cycle_delay_range_expr cycle_delay_range sequence_expr {
+		AstNode *node = new AstNode(AST_SVA_SEQ_CONCAT, $1, $3);
+       		ast_stack.back()->children.push_back(node);
+	};
 
 cycle_delay_range:
-	TOK_CYCLE_DELAY TOK_CONSTVAL;
+	TOK_CYCLE_DELAY TOK_CONSTVAL {
+		$$ = new AstNode(AST_RANGE);
+		$$->children.push_back(const2ast(*$2));
+		$$->children.push_back(const2ast(*$2));
+	} |
+	// TODO: should work for constant expressions
+	TOK_CYCLE_DELAY '[' expr ':' expr ']' {
+		$$ = new AstNode(AST_RANGE);
+		$$->children.push_back($3);
+		$$->children.push_back($5);
+	} |
+	TOK_CYCLE_DELAY '[' expr ':' '$' ']' {
+		AstNode *infnode = AstNode::mkconst_int(-1, true);
+		infnode->str = "$";
+        	$$ = new AstNode(AST_RANGE);
+        	$$->children.push_back($3);
+        	$$->children.push_back(infnode);
+        } |
+	TOK_CYCLE_DELAY '[' '*' ']' {
+		AstNode *infnode = AstNode::mkconst_int(-1, true);
+        	infnode->str = "$";
+		$$ = new AstNode(AST_RANGE);
+        	$$->children.push_back(AstNode::mkconst_int(0, false));
+        	$$->children.push_back(infnode);
+	} |
+	TOK_CYCLE_DELAY '[' '+' ']' {
+		AstNode *infnode = AstNode::mkconst_int(-1, true);
+        	infnode->str = "$";
+        	$$ = new AstNode(AST_RANGE);
+        	$$->children.push_back(AstNode::mkconst_int(1, false));
+        	$$->children.push_back(infnode);
+	};
 
 simple_behavioral_stmt:
 	lvalue '=' delay expr {

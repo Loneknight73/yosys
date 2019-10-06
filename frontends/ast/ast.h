@@ -68,6 +68,8 @@ namespace AST
 		AST_LIVE,
 		AST_FAIR,
 		AST_COVER,
+		AST_PROPERTY,
+		AST_SEQUENCE,
 
 		AST_FCALL,
 		AST_TO_BITS,
@@ -138,7 +140,7 @@ namespace AST
 		AST_GENCASE,
 		AST_GENBLOCK,
 		AST_TECALL,
-		
+
 		AST_POSEDGE,
 		AST_NEGEDGE,
 		AST_EDGE,
@@ -148,7 +150,9 @@ namespace AST
 		AST_INTERFACEPORTTYPE,
 		AST_MODPORT,
 		AST_MODPORTMEMBER,
-		AST_PACKAGE
+		AST_PACKAGE,
+		// SVA related nodes
+		AST_SVA_SEQ_CONCAT
 	};
 
 	// convert an node type to a string (e.g. for debug output)
