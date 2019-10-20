@@ -865,6 +865,7 @@ RTLIL::SigSpec AstNode::genRTLIL(int width_hint, bool sign_hint)
 	case AST_MODPORTMEMBER:
 	case AST_PROPERTY:
 	case AST_SEQUENCE:
+	case AST_CLOCKING_EV:
 	case AST_SVA_SEQ_CONCAT:
 		break;
 	case AST_INTERFACEPORT: {

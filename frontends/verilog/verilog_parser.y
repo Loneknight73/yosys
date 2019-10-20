@@ -157,7 +157,7 @@ struct specify_rise_fall {
 
 %type <ast> range range_or_multirange  non_opt_range non_opt_multirange range_or_signed_int
 %type <ast> wire_type expr basic_expr concat_list rvalue lvalue lvalue_concat_list
-%type <ast> sequence_expr cycle_delay_range_expr cycle_delay_range
+%type <ast> property_spec clocking_event property_expr sequence_expr cycle_delay_range
 %type <string> opt_label opt_sva_label tok_prim_wrapper hierarchical_id
 %type <boolean> opt_signed opt_property unique_case_attr
 %type <al> attr case_attr
@@ -1755,6 +1755,14 @@ assert_property:
 			delete $1;
 		}
 	} |
+	// Concurrent assertions support
+	opt_sva_label TOK_ASSERT TOK_PROPERTY '(' property_spec ')' ';' {
+		ast_stack.back()->children.push_back(new AstNode(assume_asserts_mode ? AST_ASSUME : AST_ASSERT, $5));
+		if ($1 != nullptr) {
+			ast_stack.back()->children.back()->str = *$1;
+			delete $1;
+		}
+	} |
 	opt_sva_label TOK_ASSUME TOK_PROPERTY '(' expr ')' ';' {
 		ast_stack.back()->children.push_back(new AstNode(AST_ASSUME, $5));
 		if ($1 != nullptr) {
@@ -1806,33 +1814,49 @@ assert_property:
 		}
 	};
 
+// Processing 'property' as 'always': is this the right thing to do?
+property_spec:
+	clocking_event property_expr {
+		$$ = new AstNode(AST_PROPERTY, $1, $2);		
+	};
+
+clocking_event:	
+	'@' '(' {
+		AstNode *node = new AstNode(AST_CLOCKING_EV);	
+		ast_stack.push_back(node);
+	} 
+	always_events ')' {
+		$$ = ast_stack.back();
+		ast_stack.pop_back();
+	};
+
+property_expr: 
+	sequence_expr;
+
 sequence_decl:
 	TOK_SEQUENCE TOK_ID ';' sequence_expr ';' TOK_ENDSEQUENCE {
-		ast_stack.back()->children.push_back(new AstNode(AST_SEQUENCE, $4));
-		ast_stack.back()->children.back()->str = *$2;
+		AstNode *node = new AstNode(AST_SEQUENCE, $4);
+		node->str = *$2;
+		ast_stack.back()->children.push_back(node);
 		delete $2;
-	}
+	};
 
 sequence_expr:
-	cycle_delay_range_expr {
-	/* TODO */
+	cycle_delay_range sequence_expr {
+		$$ = new AstNode(AST_SVA_SEQ_CONCAT);
+		$$->children.push_back($1);
+		$$->children.push_back(AstNode::mkconst_int(1, true));
+		$$->children.push_back($2);
 	} |
-	sequence_expr cycle_delay_range_expr {
-
+	sequence_expr cycle_delay_range sequence_expr {
+		$$ = new AstNode(AST_SVA_SEQ_CONCAT);
+		$$->children.push_back($2);
+		$$->children.push_back($1);
+		$$->children.push_back($3);
 	} |
 	expr {
-
-        } ;
-
-cycle_delay_range_expr:
-	cycle_delay_range sequence_expr {
-		AstNode *node = new AstNode(AST_SVA_SEQ_CONCAT, $1, $2);
-       		ast_stack.back()->children.push_back(node);
-	} |
-	cycle_delay_range_expr cycle_delay_range sequence_expr {
-		AstNode *node = new AstNode(AST_SVA_SEQ_CONCAT, $1, $3);
-       		ast_stack.back()->children.push_back(node);
-	};
+		$$ = $1;
+    } ;
 
 cycle_delay_range:
 	TOK_CYCLE_DELAY TOK_CONSTVAL {
@@ -1840,7 +1864,7 @@ cycle_delay_range:
 		$$->children.push_back(const2ast(*$2));
 		$$->children.push_back(const2ast(*$2));
 	} |
-	// TODO: should work for constant expressions
+	// TODO: should only work for constant expressions
 	TOK_CYCLE_DELAY '[' expr ':' expr ']' {
 		$$ = new AstNode(AST_RANGE);
 		$$->children.push_back($3);
@@ -1848,24 +1872,24 @@ cycle_delay_range:
 	} |
 	TOK_CYCLE_DELAY '[' expr ':' '$' ']' {
 		AstNode *infnode = AstNode::mkconst_int(-1, true);
-		infnode->str = "$";
-        	$$ = new AstNode(AST_RANGE);
-        	$$->children.push_back($3);
-        	$$->children.push_back(infnode);
+		infnode->str = "$"; //  TODO: is it necessary?
+        $$ = new AstNode(AST_RANGE);
+        $$->children.push_back($3);
+        $$->children.push_back(infnode);
         } |
 	TOK_CYCLE_DELAY '[' '*' ']' {
 		AstNode *infnode = AstNode::mkconst_int(-1, true);
-        	infnode->str = "$";
+        infnode->str = "$";
 		$$ = new AstNode(AST_RANGE);
-        	$$->children.push_back(AstNode::mkconst_int(0, false));
-        	$$->children.push_back(infnode);
+        $$->children.push_back(AstNode::mkconst_int(0, false));
+        $$->children.push_back(infnode);
 	} |
 	TOK_CYCLE_DELAY '[' '+' ']' {
 		AstNode *infnode = AstNode::mkconst_int(-1, true);
-        	infnode->str = "$";
-        	$$ = new AstNode(AST_RANGE);
-        	$$->children.push_back(AstNode::mkconst_int(1, false));
-        	$$->children.push_back(infnode);
+        infnode->str = "$";
+        $$ = new AstNode(AST_RANGE);
+        $$->children.push_back(AstNode::mkconst_int(1, false));
+        $$->children.push_back(infnode);
 	};
 
 simple_behavioral_stmt:
