@@ -168,6 +168,7 @@ std::string AST::type2str(AstNodeType type)
 	X(AST_MODPORTMEMBER)
 	X(AST_PACKAGE)
 	X(AST_SVA_SEQ_CONCAT)
+	X(AST_SVA_NON_OVERLAPPED_IMPLICATION)
 #undef X
 	default:
 		log_abort();

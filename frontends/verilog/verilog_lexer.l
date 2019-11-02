@@ -435,6 +435,7 @@ import[ \t\r\n]+\"(DPI|DPI-C)\"[ \t\r\n]+function[ \t\r\n]+ {
 "-:" { return TOK_NEG_INDEXED; }
 
 "##" {return TOK_CYCLE_DELAY; }
+"|=>" {return TOK_SVA_NON_OVERLAPPED_IMPLICATION; }
 
 [-+]?[=*]> {
 	if (!specify_mode) REJECT;

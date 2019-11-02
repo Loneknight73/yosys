@@ -153,7 +153,7 @@ struct specify_rise_fall {
 %token TOK_RAND TOK_CONST TOK_CHECKER TOK_ENDCHECKER TOK_EVENTUALLY
 %token TOK_INCREMENT TOK_DECREMENT TOK_UNIQUE TOK_PRIORITY
 %token TOK_SEQUENCE TOK_ENDSEQUENCE
-%token TOK_CYCLE_DELAY
+%token TOK_CYCLE_DELAY TOK_SVA_NON_OVERLAPPED_IMPLICATION
 
 %type <ast> range range_or_multirange  non_opt_range non_opt_multirange range_or_signed_int
 %type <ast> wire_type expr basic_expr concat_list rvalue lvalue lvalue_concat_list
@@ -1814,7 +1814,7 @@ assert_property:
 		}
 	};
 
-// Processing 'property' as 'always': is this the right thing to do?
+// TODO: Processing 'property_spec' as 'always': is this the right thing to do?
 property_spec:
 	clocking_event property_expr {
 		$$ = new AstNode(AST_PROPERTY, $1, $2);		
@@ -1831,7 +1831,12 @@ clocking_event:
 	};
 
 property_expr: 
-	sequence_expr;
+	sequence_expr {
+		$$ = $1;
+	} | 
+	sequence_expr TOK_SVA_NON_OVERLAPPED_IMPLICATION property_expr {
+		$$ = new AstNode(AST_SVA_NON_OVERLAPPED_IMPLICATION, $1, $3);	
+	};
 
 sequence_decl:
 	TOK_SEQUENCE TOK_ID ';' sequence_expr ';' TOK_ENDSEQUENCE {

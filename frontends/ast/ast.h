@@ -153,7 +153,8 @@ namespace AST
 		AST_MODPORTMEMBER,
 		AST_PACKAGE,
 		// SVA related nodes
-		AST_SVA_SEQ_CONCAT
+		AST_SVA_SEQ_CONCAT,
+		AST_SVA_NON_OVERLAPPED_IMPLICATION
 	};
 
 	// convert an node type to a string (e.g. for debug output)
